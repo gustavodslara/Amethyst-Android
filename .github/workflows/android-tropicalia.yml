@@ -1,0 +1,45 @@
+name: Android CI Tropicalia
+
+on:
+  push:
+    branches: [ "main" ] # Runs on push to main
+  pull_request:
+    branches: [ "main" ] # Runs on PR to main
+  workflow_dispatch: {} # Allows manual triggering
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: set up JDK 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Build with Gradle
+      run: ./gradlew :app_pojavlauncher:assembleDebug
+
+    - name: Upload APK to GitHub Release
+      uses: softprops/action-gh-release@v1
+      # This step now runs on every build from main or manual dispatch
+      with:
+        tag_name: TropicaliaCraft # Always upload to this tag
+        name: "TropicaliaCraft Build" # Name for the release
+        body: "Latest build from main branch or manual run."
+        draft: false
+        prerelease: false
+        make_latest: true # Mark this as the "latest" release
+        # This will upload the file from the path specified below.
+        files: app_pojavlauncher/build/outputs/apk/debug/app_pojavlauncher-debug.apk
+      env:
+        # The GITHUB_TOKEN is automatically provided by GitHub Actions
+        # to allow it to create the release in your repository.
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
